@@ -53,7 +53,7 @@ fn iterations_m(
 ) -> u32 {
     var z = pc.p_math.xy;
     for (var x: u32 = 0u; x < u32(pc.p_math.w); x = x + 1u) {
-        if dot(z, z) > pc.p_math.z {
+        if dot(z, z) > 4.0 {
             return x;
         }
         z = square(z) + c;
@@ -120,11 +120,15 @@ fn color(num: u32) -> vec4<f32> {
     } else {
         let hue = angle(f32(num) * pc.p_gfx.y + pc.p_gfx.x);
 
-        let val = ((f32(num) / pc.p_math.w))
-                * (abs(pc.p_gfx.w) - abs(pc.p_gfx.z))
-            + abs(pc.p_gfx.z);
+//        let val = ((f32(num) / pc.p_math.w))
+//                * (abs(pc.p_gfx.w) - abs(pc.p_gfx.z))
+//            + abs(pc.p_gfx.z);
 
-        return cubehelix(hue, 1.0, val);
+        let val = (1. - pow(0.99, f32(num)))
+                * (abs(pc.p_gfx.w) - abs(pc.p_gfx.z))
+                + abs(pc.p_gfx.z);
+
+        return HSL(hue, 1.0, val);
     }
 }
 
@@ -153,6 +157,19 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let x = pc.window.x + (in.tex_coord.x) * (pc.window.z - pc.window.x);
     let y = pc.window.y + (in.tex_coord.y) * (pc.window.w - pc.window.y);
 
-    return color(iterations(vec2(x, y)));
+    let oversample = 1u;
+    var iters = 0u;
+
+    for (var dx: u32 = 0u; dx < oversample; dx++) {
+        for (var dy: u32 = 0u; dy < oversample; dy++) {
+            let x2 = x + f32(dx) * dpdx(in.tex_coord.x) * (pc.window.z - pc.window.x)/f32(oversample);
+            let y2 = y + f32(dy) * dpdy(in.tex_coord.y) * (pc.window.w - pc.window.y)/f32(oversample);
+            iters += iterations(vec2(x2, y2));
+        }
+    }
+
+    iters = iters / (oversample * oversample);
+
+    return color(iters);
 }
 

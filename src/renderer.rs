@@ -374,7 +374,7 @@ impl Renderer {
                     self.pos[0] + self.wind[0],
                     self.pos[1] + self.wind[1],
                     self.c[0], self.c[1],
-                    8.0, // self.r * self.r,
+                    self.r * self.r,
                     (self.iterations as f32),
                     self.colors[0], self.colors[1],
                     self.colors[2], self.colors[3],
